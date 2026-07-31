@@ -778,7 +778,6 @@ input[type="range"]::-moz-range-thumb{
 "use strict";
 
 /* =========================================================================
-   UTILITIES
    ========================================================================= */
 function mulberry32(a){
   return function(){
@@ -993,7 +992,6 @@ const ASPECT_RATIOS = [
 ];
 
 /* =========================================================================
-   STATE
    ========================================================================= */
 function defaultState(){
   return {
@@ -2196,7 +2194,6 @@ window.addEventListener('pointermove', (e)=>{
 window.addEventListener('pointerup', ()=>{ dragging=false; stage.classList.remove('panning'); });
 
 /* =========================================================================
-   EXPORT
    ========================================================================= */
 let exportFormat='png';
 buildChipGroup2('exportFormatChips', (v)=>{ exportFormat=v; $('qualityField').style.display = v==='png'?'none':'flex'; });
@@ -2289,7 +2286,6 @@ function flashButton(btn, text){
 }
 
 /* =========================================================================
-   PRESET MANAGEMENT (in-memory + JSON import/export, no localStorage)
    ========================================================================= */
 $('savePresetBtn').addEventListener('click', ()=>{ $('presetNameInput').value=''; $('saveModal').classList.add('show'); });
 $('cancelSaveBtn').addEventListener('click', ()=>$('saveModal').classList.remove('show'));
@@ -2348,7 +2344,6 @@ $('importPresetsFile').addEventListener('change', (e)=>{
 });
 
 /* =========================================================================
-   HISTORY PANEL
    ========================================================================= */
 function renderHistoryPanel(label){
   updateUndoRedoButtons();
@@ -2367,7 +2362,6 @@ function renderHistoryPanel(label){
 }
 
 /* =========================================================================
-   PRESET / STYLE SEARCH (topbar)
    ========================================================================= */
 $('presetSearch').addEventListener('input', (e)=>{
   const q = e.target.value.toLowerCase().trim();
@@ -2378,7 +2372,6 @@ $('presetSearch').addEventListener('input', (e)=>{
 });
 
 /* =========================================================================
-   INIT
    ========================================================================= */
 function init(){
   buildCategoryGrid();
