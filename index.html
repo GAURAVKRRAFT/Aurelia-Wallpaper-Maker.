@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aurelia — Procedural Wallpaper Maker</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%237c9cff'/%3E%3Cstop offset='50%25' stop-color='%23c792ea'/%3E%3Cstop offset='100%25' stop-color='%23ff9d6c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3C/svg%3E">
 <style>
 :root{
   --bg-0:#0b0d12;
@@ -416,6 +417,7 @@ input[type="range"]::-moz-range-thumb{
   padding:6px 12px;border-radius:20px;font-size:11px;color:var(--text-1);
   backdrop-filter:blur(10px);z-index:25;font-weight:700;
   user-select:none;
+  cursor:pointer;
 }
 
 /* ---------- MODAL ---------- */
@@ -948,6 +950,13 @@ const CATEGORIES = [
   {id:"random", name:"Random Composition"},
 ];
 
+/* Generators that actually consume the fbm/noise2D argument.
+   Used to skip the (relatively expensive) noise permutation-table
+   construction when it isn't needed by the active category. */
+const NOISE_USING_CATEGORIES = new Set([
+  "mountains","wavy","blobs","trimesh","lowpoly","noise","random"
+]);
+
 /* =========================================================================
    DEVICE / RESOLUTION PRESETS
    ========================================================================= */
@@ -1119,20 +1128,6 @@ function withGridRepetition(w,h,drawOnce){
 }
 
 /* ---- primitive helpers ---- */
-function roughPoint(rng, x, y, amt){
-  return [x + (rng()-0.5)*amt, y + (rng()-0.5)*amt];
-}
-function drawRoughLine(ctx, rng, x1,y1,x2,y2, segments, wobble){
-  ctx.beginPath();
-  ctx.moveTo(x1,y1);
-  for(let i=1;i<=segments;i++){
-    const t=i/segments;
-    const x = lerp(x1,x2,t) + (rng()-0.5)*wobble;
-    const y = lerp(y1,y2,t) + (rng()-0.5)*wobble;
-    ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-}
 function polygonPath(ctx, cx, cy, radius, sides, rotation){
   ctx.beginPath();
   for(let i=0;i<=sides;i++){
@@ -1337,11 +1332,16 @@ Generators.mountains = function(ctx,w,h,rng,noise2D){
     }
   }
   if(state.reflection){
+    /* BUGFIX: previously mirrored the wrong source rectangle
+       (0, h-horizon, w, horizon), which does not correspond to the
+       area actually painted above the horizon line. The sky+mountains
+       live in the region (0,0,w,horizon) — that is the region that
+       should be flipped down below the horizon. */
     ctx.save();
     ctx.translate(0, horizon*2);
     ctx.scale(1,-1);
     ctx.globalAlpha=0.25;
-    ctx.drawImage(ctx.canvas, 0, h-horizon, w, horizon, 0, h-horizon, w, horizon);
+    ctx.drawImage(ctx.canvas, 0, 0, w, horizon, 0, 0, w, horizon);
     ctx.restore();
     const g = ctx.createLinearGradient(0,horizon,0,h);
     g.addColorStop(0, "rgba(10,14,26,0.1)"); g.addColorStop(1,"rgba(10,14,26,0.75)");
@@ -1563,6 +1563,8 @@ Generators.noise = function(ctx,w,h,rng,noise2D){
   const scale = clamp(0.002+ (100-state.density)/100*0.02, 0.002, 0.03);
   const c1 = hexToRgb(state.palette[0]);
   const c2 = hexToRgb(state.palette[state.palette.length-1]);
+  const alpha255 = 255*(state.opacity/100);
+  const data = img.data;
   for(let y=0;y<h;y+=2){
     for(let x=0;x<w;x+=2){
       const nz = fbm(noise2D, x*scale, y*scale, 5);
@@ -1571,7 +1573,7 @@ Generators.noise = function(ctx,w,h,rng,noise2D){
       for(let dy=0;dy<2 && y+dy<h; dy++){
         for(let dx=0;dx<2 && x+dx<w; dx++){
           const idx=((y+dy)*w+(x+dx))*4;
-          img.data[idx]=r; img.data[idx+1]=g; img.data[idx+2]=b; img.data[idx+3]=255*(state.opacity/100);
+          data[idx]=r; data[idx+1]=g; data[idx+2]=b; data[idx+3]=alpha255;
         }
       }
     }
@@ -1744,7 +1746,12 @@ function applyGrain(ctx,w,h,amount,rng){
 /* ---- MAIN RENDER ---- */
 function renderToContext(ctx, w, h){
   const rng = mulberry32(state.seed>>>0);
-  const noise2D = makeNoise2D(mulberry32((state.seed*7+13)>>>0));
+  /* OPTIMIZATION: building the value-noise permutation table is not free
+     (a 256-entry Fisher-Yates shuffle plus a 512-entry copy). Categories
+     that never call fbm/noise2D don't need it — skip it and pass a cheap
+     stub instead so we don't pay that cost on every single render. */
+  const needsNoise = NOISE_USING_CATEGORIES.has(state.category);
+  const noise2D = needsNoise ? makeNoise2D(mulberry32((state.seed*7+13)>>>0)) : null;
   ctx.clearRect(0,0,w,h);
   ctx.save();
   const bg = resolveBackground(rng);
@@ -1757,19 +1764,17 @@ function renderToContext(ctx, w, h){
 
   const layers = Math.max(1, state.layerCount);
   const gen = Generators[state.category] || Generators.geometric;
-  for(let L=0; L<layers; L++){
+  const singleLayerCategory = state.category==="mountains" || state.category==="vaporwave" || state.category==="noise" || state.category==="gradientmesh";
+  const layerCountToRun = singleLayerCategory ? 1 : layers;
+  for(let L=0; L<layerCountToRun; L++){
     ctx.save();
-    if(layers>1){
+    if(layers>1 && !singleLayerCategory){
       ctx.globalAlpha = 1 - (L*0.12);
     }
     // vary seed slightly per layer for depth, deterministic
     const layerRng = mulberry32((state.seed + L*7919)>>>0);
-    const layerNoise = makeNoise2D(mulberry32((state.seed*7+13+L*101)>>>0));
-    if(state.category==="mountains" || state.category==="vaporwave" || state.category==="noise" || state.category==="gradientmesh"){
-      if(L===0) gen(ctx,w,h,layerRng,layerNoise);
-    } else {
-      gen(ctx,w,h,layerRng,layerNoise);
-    }
+    const layerNoise = needsNoise ? makeNoise2D(mulberry32((state.seed*7+13+L*101)>>>0)) : null;
+    gen(ctx,w,h,layerRng,layerNoise);
     ctx.restore();
   }
   ctx.filter='none';
@@ -1789,6 +1794,7 @@ function scheduleRender(){
     doRender();
   });
 }
+let lastRenderW = null, lastRenderH = null;
 function doRender(){
   document.getElementById('loadingBadge').classList.add('show');
   // small timeout so the badge can paint before heavy synchronous work
@@ -1799,8 +1805,15 @@ function doRender(){
     renderToContext(previewCtx, w, h);
     document.getElementById('dimReadout').textContent = `${w} × ${h}`;
     document.getElementById('loadingBadge').classList.remove('show');
-    fitToScreen(false);
-    try{ lastRenderedDataURL = null; }catch(e){}
+    /* BUGFIX: previously fitToScreen() ran on every single render, which
+       meant any slider tweak silently reset the user's manual zoom/pan.
+       Now we only re-fit when the canvas dimensions actually changed
+       (or on first render), and otherwise leave the user's view alone. */
+    if(w !== lastRenderW || h !== lastRenderH){
+      lastRenderW = w; lastRenderH = h;
+      fitToScreen(false);
+    }
+    lastRenderedDataURL = null;
   }, 10);
 }
 
@@ -2096,14 +2109,19 @@ $('lockColorsBtn').addEventListener('click', ()=>{
 });
 $('compareBtn').addEventListener('click', ()=>{
   if(!compareMode){
-    compareSnapshot = previewCanvas.toDataURL();
-    if(historyIndex>0){
-      const prevState = JSON.parse(history[historyIndex-1]);
-      const tmp = state; state = prevState;
-      renderToContext(previewCtx, state.width, state.height);
-      state = tmp;
-      previewCanvas.width = state.width; previewCanvas.height = state.height;
+    /* BUGFIX: guard against there being no previous history entry so the
+       compare toggle can't silently no-op while still flipping into
+       "compare mode" with nothing to show. */
+    if(historyIndex<=0){
+      flashButton($('compareBtn'), '');
+      return;
     }
+    compareSnapshot = previewCanvas.toDataURL();
+    const prevState = JSON.parse(history[historyIndex-1]);
+    const tmp = state; state = prevState;
+    previewCanvas.width = state.width; previewCanvas.height = state.height;
+    renderToContext(previewCtx, state.width, state.height);
+    state = tmp;
     $('compareBadge').style.display='flex';
     compareMode = true;
   } else {
@@ -2111,6 +2129,9 @@ $('compareBtn').addEventListener('click', ()=>{
     $('compareBadge').style.display='none';
     compareMode = false;
   }
+});
+$('compareBadge').addEventListener('click', ()=>{
+  if(compareMode) $('compareBtn').click();
 });
 $('themeBtn').addEventListener('click', ()=>{
   const html = document.documentElement;
@@ -2143,6 +2164,9 @@ $('sidebarScrim').addEventListener('click', ()=>{
   $('sidebar').classList.remove('open');
   $('sidebarScrim').classList.remove('show');
 });
+/* BUGFIX: two separate resize listeners were previously registered
+   (one here, one further down) which caused fitToScreen to be invoked
+   twice per resize event. Consolidated into one handler. */
 window.addEventListener('resize', ()=>{ updateMobileUI(); fitToScreen(false); });
 
 /* =========================================================================
@@ -2214,7 +2238,7 @@ function buildExportResSelect(){
     RESOLUTION_PRESETS.map((r,i)=>`<option value="${i}">${r.name}</option>`).join('');
 }
 $('exportOpenBtn').addEventListener('click', ()=>{ buildExportResSelect(); $('exportModal').classList.add('show'); });
-document.querySelectorAll('#exportModal').forEach(m=>{
+document.querySelectorAll('.modal-overlay').forEach(m=>{
   m.addEventListener('click', (e)=>{ if(e.target===m) m.classList.remove('show'); });
 });
 
@@ -2243,6 +2267,7 @@ $('downloadBtn').addEventListener('click', ()=>{
   const {w,h} = getExportDims();
   const c = (w===state.width && h===state.height) ? previewCanvas : renderAtResolution(w,h);
   exportCanvasBlob(c, (blob)=>{
+    if(!blob) return;
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href=url; a.download = `wallpaper-${state.category}-${w}x${h}.${exportFormat==='jpeg'?'jpg':exportFormat}`;
@@ -2253,14 +2278,16 @@ $('downloadBtn').addEventListener('click', ()=>{
 $('copyClipboardBtn').addEventListener('click', async ()=>{
   const {w,h} = getExportDims();
   const c = (w===state.width && h===state.height) ? previewCanvas : renderAtResolution(w,h);
-  exportCanvasBlob(c, async (blob)=>{
-    try{
-      await navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);
-      flashButton($('copyClipboardBtn'), 'Copied!');
-    }catch(err){
-      flashButton($('copyClipboardBtn'), 'Copy failed');
-    }
-  });
+  /* BUGFIX: clipboard image writes only support PNG in all major
+     browsers today; forcing whatever exportFormat was selected (e.g.
+     JPEG/WebP) silently failed the clipboard write in some browsers.
+     Copy always uses PNG regardless of the chosen download format. */
+  c.toBlob((blob)=>{
+    if(!blob) return;
+    navigator.clipboard.write([new ClipboardItem({'image/png':blob})])
+      .then(()=>flashButton($('copyClipboardBtn'), 'Copied!'))
+      .catch(()=>flashButton($('copyClipboardBtn'), 'Copy failed'));
+  }, 'image/png');
 });
 $('batchExportBtn').addEventListener('click', async ()=>{
   flashButton($('batchExportBtn'), 'Exporting…');
@@ -2269,6 +2296,7 @@ $('batchExportBtn').addEventListener('click', async ()=>{
     const c = renderAtResolution(d.w,d.h);
     await new Promise(res=>{
       exportCanvasBlob(c, (blob)=>{
+        if(!blob){ res(); return; }
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href=url; a.download = `wallpaper-${d.name.replace(/[^a-z0-9]+/gi,'_')}-${d.w}x${d.h}.${exportFormat==='jpeg'?'jpg':exportFormat}`;
@@ -2280,6 +2308,7 @@ $('batchExportBtn').addEventListener('click', async ()=>{
   flashButton($('batchExportBtn'), 'Batch export devices');
 });
 function flashButton(btn, text){
+  if(!text) return;
   const orig = btn.textContent;
   btn.textContent = text;
   setTimeout(()=>{btn.textContent=orig;}, 1600);
@@ -2336,9 +2365,12 @@ $('importPresetsFile').addEventListener('change', (e)=>{
       if(Array.isArray(arr)){
         savedPresets = savedPresets.concat(arr);
         renderPresetList();
+      } else {
+        alert('Invalid preset file: expected a JSON array.');
       }
     }catch(err){ alert('Invalid preset file.'); }
   };
+  reader.onerror = ()=> alert('Could not read preset file.');
   reader.readAsText(file);
   e.target.value='';
 });
@@ -2384,7 +2416,6 @@ function init(){
   updateMobileUI();
   $('categoryTag').textContent = CATEGORIES.find(c=>c.id===state.category).name;
   scheduleRender();
-  window.addEventListener('resize', ()=>fitToScreen(false));
   setTimeout(()=>fitToScreen(true), 50);
 }
 init();
