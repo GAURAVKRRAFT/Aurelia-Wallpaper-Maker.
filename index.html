@@ -1332,11 +1332,6 @@ Generators.mountains = function(ctx,w,h,rng,noise2D){
     }
   }
   if(state.reflection){
-    /* BUGFIX: previously mirrored the wrong source rectangle
-       (0, h-horizon, w, horizon), which does not correspond to the
-       area actually painted above the horizon line. The sky+mountains
-       live in the region (0,0,w,horizon) — that is the region that
-       should be flipped down below the horizon. */
     ctx.save();
     ctx.translate(0, horizon*2);
     ctx.scale(1,-1);
@@ -1620,7 +1615,6 @@ Generators.brushstrokes = function(ctx,w,h,rng){
 };
 
 Generators.japanese = function(ctx,w,h,rng){
-  // large negative space, one or two ink brush circles/branches
   const color = state.palette[0];
   ctx.strokeStyle=color; ctx.fillStyle=color;
   const circles = 1+Math.floor(rng()*2);
@@ -1633,7 +1627,6 @@ Generators.japanese = function(ctx,w,h,rng){
     ctx.arc(cx,cy,r, rng()*0.6, Math.PI*1.8+rng()*0.5);
     ctx.stroke();
   }
-  // branch
   ctx.globalAlpha=0.9;
   ctx.lineWidth=3;
   let x=w*0.15,y=h*0.85;
@@ -1685,7 +1678,6 @@ Generators.vaporwave = function(ctx,w,h,rng){
     const yy = sunY - sunR*0.15*i;
     ctx.fillRect(w/2-sunR, yy, sunR*2, sunR*0.04);
   }
-  // grid floor
   ctx.strokeStyle = state.palette[3]||"#00F0FF";
   ctx.lineWidth=2;
   const horizon = h*0.62;
@@ -1746,10 +1738,6 @@ function applyGrain(ctx,w,h,amount,rng){
 /* ---- MAIN RENDER ---- */
 function renderToContext(ctx, w, h){
   const rng = mulberry32(state.seed>>>0);
-  /* OPTIMIZATION: building the value-noise permutation table is not free
-     (a 256-entry Fisher-Yates shuffle plus a 512-entry copy). Categories
-     that never call fbm/noise2D don't need it — skip it and pass a cheap
-     stub instead so we don't pay that cost on every single render. */
   const needsNoise = NOISE_USING_CATEGORIES.has(state.category);
   const noise2D = needsNoise ? makeNoise2D(mulberry32((state.seed*7+13)>>>0)) : null;
   ctx.clearRect(0,0,w,h);
@@ -1771,7 +1759,6 @@ function renderToContext(ctx, w, h){
     if(layers>1 && !singleLayerCategory){
       ctx.globalAlpha = 1 - (L*0.12);
     }
-    // vary seed slightly per layer for depth, deterministic
     const layerRng = mulberry32((state.seed + L*7919)>>>0);
     const layerNoise = needsNoise ? makeNoise2D(mulberry32((state.seed*7+13+L*101)>>>0)) : null;
     gen(ctx,w,h,layerRng,layerNoise);
@@ -1797,7 +1784,6 @@ function scheduleRender(){
 let lastRenderW = null, lastRenderH = null;
 function doRender(){
   document.getElementById('loadingBadge').classList.add('show');
-  // small timeout so the badge can paint before heavy synchronous work
   setTimeout(()=>{
     const w = state.width, h = state.height;
     previewCanvas.width = w;
@@ -1805,10 +1791,6 @@ function doRender(){
     renderToContext(previewCtx, w, h);
     document.getElementById('dimReadout').textContent = `${w} × ${h}`;
     document.getElementById('loadingBadge').classList.remove('show');
-    /* BUGFIX: previously fitToScreen() ran on every single render, which
-       meant any slider tweak silently reset the user's manual zoom/pan.
-       Now we only re-fit when the canvas dimensions actually changed
-       (or on first render), and otherwise leave the user's view alone. */
     if(w !== lastRenderW || h !== lastRenderH){
       lastRenderW = w; lastRenderH = h;
       fitToScreen(false);
@@ -2109,9 +2091,6 @@ $('lockColorsBtn').addEventListener('click', ()=>{
 });
 $('compareBtn').addEventListener('click', ()=>{
   if(!compareMode){
-    /* BUGFIX: guard against there being no previous history entry so the
-       compare toggle can't silently no-op while still flipping into
-       "compare mode" with nothing to show. */
     if(historyIndex<=0){
       flashButton($('compareBtn'), '');
       return;
@@ -2164,9 +2143,6 @@ $('sidebarScrim').addEventListener('click', ()=>{
   $('sidebar').classList.remove('open');
   $('sidebarScrim').classList.remove('show');
 });
-/* BUGFIX: two separate resize listeners were previously registered
-   (one here, one further down) which caused fitToScreen to be invoked
-   twice per resize event. Consolidated into one handler. */
 window.addEventListener('resize', ()=>{ updateMobileUI(); fitToScreen(false); });
 
 /* =========================================================================
@@ -2278,10 +2254,6 @@ $('downloadBtn').addEventListener('click', ()=>{
 $('copyClipboardBtn').addEventListener('click', async ()=>{
   const {w,h} = getExportDims();
   const c = (w===state.width && h===state.height) ? previewCanvas : renderAtResolution(w,h);
-  /* BUGFIX: clipboard image writes only support PNG in all major
-     browsers today; forcing whatever exportFormat was selected (e.g.
-     JPEG/WebP) silently failed the clipboard write in some browsers.
-     Copy always uses PNG regardless of the chosen download format. */
   c.toBlob((blob)=>{
     if(!blob) return;
     navigator.clipboard.write([new ClipboardItem({'image/png':blob})])
@@ -2291,7 +2263,7 @@ $('copyClipboardBtn').addEventListener('click', async ()=>{
 });
 $('batchExportBtn').addEventListener('click', async ()=>{
   flashButton($('batchExportBtn'), 'Exporting…');
-  const picks = [DEVICE_PRESETS[6], DEVICE_PRESETS[1], DEVICE_PRESETS[13]]; // laptop, iphone, 4k
+  const picks = [DEVICE_PRESETS[6], DEVICE_PRESETS[1], DEVICE_PRESETS[13]];
   for(const d of picks){
     const c = renderAtResolution(d.w,d.h);
     await new Promise(res=>{
