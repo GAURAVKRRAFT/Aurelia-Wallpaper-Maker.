@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aurelia — Procedural Wallpaper Maker</title>
+<title>Aurelia</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%237c9cff'/%3E%3Cstop offset='50%25' stop-color='%23c792ea'/%3E%3Cstop offset='100%25' stop-color='%23ff9d6c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3C/svg%3E">
 <style>
 :root{
@@ -76,7 +76,6 @@ body{
   width:100vw;
 }
 
-/* ---------- HEADER ---------- */
 .topbar{
   grid-area:header;
   display:flex;
@@ -155,7 +154,6 @@ body{
 .btn.primary:hover{filter:brightness(1.08);box-shadow:0 6px 20px color-mix(in srgb, var(--accent) 40%, transparent);}
 .btn svg{flex-shrink:0;}
 
-/* ---------- SIDEBAR ---------- */
 .sidebar{
   grid-area:sidebar;
   border-right:1px solid var(--panel-border);
@@ -350,7 +348,6 @@ input[type="range"]::-moz-range-thumb{
 .preset-item button:hover{color:var(--text-0);background:var(--panel-border);}
 .empty-hint{font-size:11.5px;color:var(--text-2);text-align:center;padding:10px 0;}
 
-/* ---------- MAIN CANVAS AREA ---------- */
 .main{
   grid-area:main;
   position:relative;
@@ -420,7 +417,6 @@ input[type="range"]::-moz-range-thumb{
   cursor:pointer;
 }
 
-/* ---------- MODAL ---------- */
 .modal-overlay{
   position:fixed;inset:0;background:rgba(6,7,10,0.6);
   display:none;align-items:center;justify-content:center;z-index:100;
@@ -436,7 +432,6 @@ input[type="range"]::-moz-range-thumb{
 .modal .field{margin-bottom:12px;}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
 
-/* Fullscreen mode */
 .app.fullscreen-mode .sidebar,
 .app.fullscreen-mode .topbar,
 .app.fullscreen-mode .canvas-toolbar{display:none;}
@@ -446,7 +441,6 @@ input[type="range"]::-moz-range-thumb{
   position:fixed;top:16px;right:16px;z-index:200;
 }
 
-/* Responsive */
 @media (max-width:900px){
   .app{grid-template-columns:1fr;grid-template-rows:56px 1fr;grid-template-areas:"header" "main";}
   .sidebar{
@@ -471,7 +465,6 @@ input[type="range"]::-moz-range-thumb{
 <body>
 <div class="app" id="app">
 
-  <!-- HEADER -->
   <div class="topbar">
     <div class="brand"><span class="mark"></span>Aurelia</div>
     <div class="divider"></div>
@@ -508,10 +501,8 @@ input[type="range"]::-moz-range-thumb{
 
   <div class="sidebar-scrim" id="sidebarScrim"></div>
 
-  <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
 
-    <!-- CATEGORY -->
     <div class="section" data-section="category">
       <div class="section-head"><svg class="sicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Category<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
       <div class="section-body">
@@ -519,7 +510,6 @@ input[type="range"]::-moz-range-thumb{
       </div>
     </div>
 
-    <!-- PALETTE -->
     <div class="section" data-section="palette">
       <div class="section-head"><svg class="sicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="8" r="1.3" fill="currentColor"/><circle cx="8.5" cy="13" r="1.3" fill="currentColor"/><circle cx="15.5" cy="13" r="1.3" fill="currentColor"/></svg>Color &amp; Palette<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
       <div class="section-body">
@@ -552,7 +542,6 @@ input[type="range"]::-moz-range-thumb{
       </div>
     </div>
 
-    <!-- PATTERN CONTROLS -->
     <div class="section" data-section="pattern">
       <div class="section-head"><svg class="sicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 21V3M4 3l8 5-8 5M20 21V3M20 3l-8 5 8 5"/></svg>Pattern Controls<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
       <div class="section-body">
@@ -599,7 +588,6 @@ input[type="range"]::-moz-range-thumb{
       </div>
     </div>
 
-    <!-- MOUNTAIN -->
     <div class="section" data-section="mountain" id="mountainSection">
       <div class="section-head"><svg class="sicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 20l6-11 4 6 3-4 5 9z"/></svg>Landscape Generator<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
       <div class="section-body">
@@ -632,7 +620,6 @@ input[type="range"]::-moz-range-thumb{
       </div>
     </div>
 
-    <!-- SCRIBBLE -->
     <div class="section" data-section="scribble" id="scribbleSection">
       <div class="section-head"><svg class="sicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 17c4-8 6 6 9-2 2-5 4 4 9-4"/></svg>Scribble Generator<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
       <div class="section-body">
@@ -652,7 +639,6 @@ input[type="range"]::-moz-range-thumb{
       </div>
     </div>
 
-    <!-- DEVICE / RESOLUTION -->
     <div class="section collapsed" data-section="device">
       <div class="section-head"><svg class="sicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="3" width="16" height="13" rx="1.5"/><path d="M9 21h6M12 16v5"/></svg>Device &amp; Resolution<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
       <div class="section-body">
@@ -672,7 +658,6 @@ input[type="range"]::-moz-range-thumb{
       </div>
     </div>
 
-    <!-- PRESETS -->
     <div class="section collapsed" data-section="presets">
       <div class="section-head"><svg class="sicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Saved Presets<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
       <div class="section-body">
@@ -698,7 +683,6 @@ input[type="range"]::-moz-range-thumb{
 
   </div>
 
-  <!-- MAIN -->
   <div class="main">
     <div class="canvas-toolbar">
       <button class="icon-btn" id="sidebarToggleBtn" title="Menu" style="display:none;">
@@ -732,7 +716,6 @@ input[type="range"]::-moz-range-thumb{
 
 <button class="icon-btn fs-exit btn" id="fsExitBtn" style="display:none;">Exit fullscreen ✕</button>
 
-<!-- EXPORT MODAL -->
 <div class="modal-overlay" id="exportModal">
   <div class="modal">
     <h3>Export wallpaper</h3>
@@ -760,7 +743,6 @@ input[type="range"]::-moz-range-thumb{
   </div>
 </div>
 
-<!-- SAVE PRESET MODAL -->
 <div class="modal-overlay" id="saveModal">
   <div class="modal">
     <h3>Save preset</h3>
@@ -779,8 +761,7 @@ input[type="range"]::-moz-range-thumb{
 (function(){
 "use strict";
 
-/* =========================================================================
-   ========================================================================= */
+
 function mulberry32(a){
   return function(){
     a |= 0; a = (a + 0x6D2B79F5) | 0;
@@ -793,7 +774,6 @@ function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function lerp(a,b,t){return a+(b-a)*t;}
 function degToRad(d){return d*Math.PI/180;}
 
-// simple value-noise for organic textures
 function makeNoise2D(rng){
   const perm = new Uint8Array(512);
   const p = new Uint8Array(256);
@@ -878,9 +858,7 @@ function hexToHsl(hex){ const {r,g,b}=hexToRgb(hex); return rgbToHsl(r,g,b); }
 function hslToHex(h,s,l){ const {r,g,b}=hslToRgb(h,s,l); return rgbToHex(r,g,b); }
 function pick(rng, arr){ return arr[Math.floor(rng()*arr.length)]; }
 
-/* =========================================================================
-   PALETTE PRESETS
-   ========================================================================= */
+
 const PALETTE_PRESETS = [
   {name:"Material", colors:["#6200EE","#03DAC6","#3700B3","#018786","#B00020"]},
   {name:"Pastel Dream", colors:["#FFD3E0","#C9E4DE","#FAE8E0","#C6DEF1","#DBCDF0"]},
@@ -922,9 +900,7 @@ function complementaryOf(colors){
   });
 }
 
-/* =========================================================================
-   CATEGORIES
-   ========================================================================= */
+
 const CATEGORIES = [
   {id:"geometric", name:"Geometric"},
   {id:"abstract", name:"Abstract Shapes"},
@@ -961,23 +937,16 @@ const CATEGORIES = [
   {id:"random", name:"Random Composition"},
 ];
 
-/* Generators that actually consume the fbm/noise2D argument.
-   Used to skip the (relatively expensive) noise permutation-table
-   construction when it isn't needed by the active category. */
+
 const NOISE_USING_CATEGORIES = new Set([
   "mountains","wavy","blobs","trimesh","lowpoly","noise","random",
   "halftone","topography","aurora","dunes","ocean","forest"
 ]);
 
-/* Landscape-family categories share the "Landscape Generator" sidebar
-   section (sky, time of day, sun/moon, fog, clouds, atmosphere) and
-   each generator draws its own full scene (sky + all depth layers) in
-   one pass, so they're also single-layer categories (see below). */
+
 const LANDSCAPE_CATEGORIES = new Set(["mountains","dunes","ocean","hills","forest","skyline"]);
 
-/* =========================================================================
-   DEVICE / RESOLUTION PRESETS
-   ========================================================================= */
+
 const DEVICE_PRESETS = [
   {name:"Android Phone (FHD+)", w:1080, h:2340},
   {name:"iPhone 15 Pro", w:1179, h:2556},
@@ -1018,8 +987,7 @@ const ASPECT_RATIOS = [
   {name:"19.5:9", r:19.5/9},
 ];
 
-/* =========================================================================
-   ========================================================================= */
+
 function defaultState(){
   return {
     category:"geometric",
@@ -1045,7 +1013,6 @@ function defaultState(){
     glowIntensity:0,
     grainAmount:10,
     seed:12345,
-    // mountains
     mLayers:4,
     peakHeight:55,
     timePreset:"sunset",
@@ -1057,12 +1024,10 @@ function defaultState(){
     skyGradient:true,
     reflection:false,
     atmospheric:true,
-    // scribble
     scribbleStyle:"ink",
     doodleCount:18,
     scribbleRandomness:40,
     handDrawn:true,
-    // canvas
     width:1920,
     height:1080,
     hdpi:false,
@@ -1099,9 +1064,7 @@ function updateUndoRedoButtons(){
 
 let savedPresets = [];
 
-/* =========================================================================
-   RENDERING ENGINE
-   ========================================================================= */
+
 const workCanvas = document.createElement('canvas');
 const workCtx = workCanvas.getContext('2d');
 const previewCanvas = document.getElementById('previewCanvas');
@@ -1145,7 +1108,6 @@ function withGridRepetition(w,h,drawOnce){
   }
 }
 
-/* ---- primitive helpers ---- */
 function polygonPath(ctx, cx, cy, radius, sides, rotation){
   ctx.beginPath();
   for(let i=0;i<=sides;i++){
@@ -1183,7 +1145,6 @@ function applyShadowGlow(ctx, colorHex){
   }
 }
 
-/* ---- GENERATORS ---- */
 const Generators = {};
 
 Generators.geometric = function(ctx,w,h,rng,noise2D){
@@ -1369,11 +1330,7 @@ Generators.mountains = function(ctx,w,h,rng,noise2D){
   }
 };
 
-/* ---- shared landscape-family helpers (sky, fog, reflection) ----
-   Extracted so every scene in the landscape family (dunes, ocean, hills,
-   forest, skyline) gets the same sky/atmosphere behavior as mountains
-   without duplicating that logic five times. Generators.mountains keeps
-   its own inline copy untouched to avoid disturbing its existing output. */
+
 function renderLandscapeSky(ctx,w,h,rng,skyBottomFrac){
   const preset = state.timePreset;
   const skies = {
@@ -2107,7 +2064,6 @@ Generators.random = function(ctx,w,h,rng,noise2D){
   ctx.globalAlpha=1;
 };
 
-/* ---- post effects ---- */
 function applyGrain(ctx,w,h,amount,rng){
   if(amount<=0) return;
   const img = ctx.getImageData(0,0,w,h);
@@ -2124,7 +2080,6 @@ function applyGrain(ctx,w,h,amount,rng){
   ctx.putImageData(img,0,0);
 }
 
-/* ---- MAIN RENDER ---- */
 function renderToContext(ctx, w, h){
   const rng = mulberry32(state.seed>>>0);
   const needsNoise = NOISE_USING_CATEGORIES.has(state.category);
@@ -2163,11 +2118,7 @@ function renderToContext(ctx, w, h){
 
 let renderScheduled = false;
 function scheduleRender(){
-  /* BUGFIX: if the user tweaks any control while "compare" is showing the
-     previous version, the badge claimed to still show the old design even
-     though the edit silently re-rendered the current one underneath it.
-     Any change that schedules a fresh render exits compare mode first so
-     the badge and the pixels on screen never disagree. */
+ 
   if(compareMode){
     compareMode = false;
     $('compareBadge').style.display='none';
@@ -2197,9 +2148,7 @@ function doRender(){
   }, 10);
 }
 
-/* =========================================================================
-   UI BUILDING
-   ========================================================================= */
+
 const $ = (id)=>document.getElementById(id);
 
 function buildCategoryGrid(){
@@ -2226,10 +2175,7 @@ function buildCategoryGrid(){
 function toggleContextualSections(){
   $('mountainSection').style.display = LANDSCAPE_CATEGORIES.has(state.category) ? '' : 'none';
   $('scribbleSection').style.display = state.category==='scribble' ? '' : 'none';
-  /* Snow caps only makes sense for the mountain silhouette itself —
-     the other landscape scenes (dunes, ocean, hills, forest, skyline)
-     ignore that flag entirely, so hide the control rather than leave a
-     dead toggle sitting in the sidebar for them. */
+  
   $('snowCapsRow').style.display = state.category==='mountains' ? '' : 'none';
 }
 
@@ -2413,14 +2359,12 @@ function syncUIFromState(){
   updateUndoRedoButtons();
 }
 
-/* ---------- section collapse ---------- */
 document.querySelectorAll('.section-head').forEach(head=>{
   head.addEventListener('click', ()=>{
     head.parentElement.classList.toggle('collapsed');
   });
 });
 
-/* ---------- misc controls ---------- */
 $('bgMode').addEventListener('change', e=>{ state.bgMode = e.target.value; pushHistory('bg'); scheduleRender(); });
 $('bgCustomColor').addEventListener('input', e=>{ state.bgCustom = e.target.value; if(state.bgMode==='custom') scheduleRender(); });
 $('bgCustomColor').addEventListener('change', ()=>pushHistory('bg'));
@@ -2521,7 +2465,6 @@ $('themeBtn').addEventListener('click', ()=>{
   html.setAttribute('data-theme', cur==='light' ? 'dark' : 'light');
 });
 
-/* Fullscreen preview */
 $('fsBtn').addEventListener('click', ()=>{
   document.getElementById('app').classList.add('fullscreen-mode');
   $('fsExitBtn').style.display='inline-flex';
@@ -2533,7 +2476,6 @@ $('fsExitBtn').addEventListener('click', ()=>{
   fitToScreen(true);
 });
 
-/* mobile sidebar */
 function isMobile(){ return window.innerWidth<=900; }
 function updateMobileUI(){
   $('sidebarToggleBtn').style.display = isMobile() ? 'flex' : 'none';
@@ -2548,9 +2490,7 @@ $('sidebarScrim').addEventListener('click', ()=>{
 });
 window.addEventListener('resize', ()=>{ updateMobileUI(); fitToScreen(false); });
 
-/* =========================================================================
-   ZOOM / PAN
-   ========================================================================= */
+
 let zoom = 1, panX=0, panY=0, fitMode=true;
 const stage = $('canvasStage');
 const viewport = $('canvasViewport');
@@ -2596,8 +2536,7 @@ window.addEventListener('pointermove', (e)=>{
 });
 window.addEventListener('pointerup', ()=>{ dragging=false; stage.classList.remove('panning'); });
 
-/* =========================================================================
-   ========================================================================= */
+
 let exportFormat='png';
 buildChipGroup2('exportFormatChips', (v)=>{ exportFormat=v; $('qualityField').style.display = v==='png'?'none':'flex'; });
 function buildChipGroup2(id, cb){
@@ -2655,17 +2594,7 @@ $('downloadBtn').addEventListener('click', ()=>{
   });
 });
 $('copyClipboardBtn').addEventListener('click', async ()=>{
-  /* BUGFIX: canvas.toBlob() is asynchronous. The previous version waited
-     for its callback and only THEN called navigator.clipboard.write().
-     By that point the click had already finished and the browser no
-     longer considered the call to be part of a direct user gesture —
-     several browsers (Safari in particular, and Chrome under stricter
-     permission policies) silently reject clipboard writes that happen
-     outside that gesture window, so "Copy to clipboard" looked broken.
-     The fix: call navigator.clipboard.write() SYNCHRONOUSLY inside the
-     click handler, handing it a Promise<Blob> rather than an already-
-     resolved Blob. The Clipboard API is specifically designed to accept
-     a pending promise for this reason — it preserves the gesture. */
+ 
   if(typeof ClipboardItem === 'undefined' || !navigator.clipboard || !navigator.clipboard.write){
     flashButton($('copyClipboardBtn'), 'Not supported');
     return;
@@ -2679,9 +2608,7 @@ $('copyClipboardBtn').addEventListener('click', async ()=>{
     await navigator.clipboard.write([new ClipboardItem({'image/png': blobPromise})]);
     flashButton($('copyClipboardBtn'), 'Copied!');
   }catch(err){
-    /* Some browsers don't support a pending-promise ClipboardItem value
-       at all (older Firefox). Fall back to awaiting the blob ourselves
-       and writing it directly — still better than failing silently. */
+   
     try{
       const blob = await blobPromise;
       await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
@@ -2716,8 +2643,7 @@ function flashButton(btn, text){
   setTimeout(()=>{btn.textContent=orig;}, 1600);
 }
 
-/* =========================================================================
-   ========================================================================= */
+
 $('savePresetBtn').addEventListener('click', ()=>{ $('presetNameInput').value=''; $('saveModal').classList.add('show'); });
 $('cancelSaveBtn').addEventListener('click', ()=>$('saveModal').classList.remove('show'));
 $('confirmSaveBtn').addEventListener('click', ()=>{
@@ -2777,8 +2703,7 @@ $('importPresetsFile').addEventListener('change', (e)=>{
   e.target.value='';
 });
 
-/* =========================================================================
-   ========================================================================= */
+
 function renderHistoryPanel(label){
   updateUndoRedoButtons();
   const panel = $('historyPanel');
@@ -2795,18 +2720,14 @@ function renderHistoryPanel(label){
   panel.scrollTop = panel.scrollHeight;
 }
 
-/* =========================================================================
-   ========================================================================= */
+
 $('presetSearch').addEventListener('input', (e)=>{
   const q = e.target.value.toLowerCase().trim();
   document.querySelectorAll('.category-card').forEach(card=>{
     const name = card.querySelector('.cname').textContent.toLowerCase();
     card.style.display = (!q || name.includes(q)) ? '' : 'none';
   });
-  /* BUGFIX: the search field's own placeholder promises it searches
-     "styles, palettes, presets" but previously only ever touched the
-     category grid — palette presets and saved presets silently ignored
-     any query typed here. Now all three respond to the same search. */
+ 
   document.querySelectorAll('#paletteGrid .preset-palette').forEach(card=>{
     const name = card.querySelector('.pname').textContent.toLowerCase();
     card.style.display = (!q || name.includes(q)) ? '' : 'none';
@@ -2819,8 +2740,7 @@ $('presetSearch').addEventListener('input', (e)=>{
   });
 });
 
-/* =========================================================================
-   ========================================================================= */
+
 function init(){
   buildCategoryGrid();
   buildPaletteGrid();
