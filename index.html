@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aurelia</title>
+<title>Aurelia — Procedural Wallpaper Maker</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%237c9cff'/%3E%3Cstop offset='50%25' stop-color='%23c792ea'/%3E%3Cstop offset='100%25' stop-color='%23ff9d6c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3C/svg%3E">
 <style>
 :root{
@@ -601,10 +601,10 @@ input[type="range"]::-moz-range-thumb{
 
     <!-- MOUNTAIN -->
     <div class="section" data-section="mountain" id="mountainSection">
-      <div class="section-head"><svg class="sicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 20l6-11 4 6 3-4 5 9z"/></svg>Mountain Generator<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
+      <div class="section-head"><svg class="sicon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 20l6-11 4 6 3-4 5 9z"/></svg>Landscape Generator<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></div>
       <div class="section-body">
-        <div class="field"><label>Mountain layers <span class="val" id="v_mLayers"></span></label><input type="range" id="mLayers" min="1" max="8" step="1"></div>
-        <div class="field"><label>Peak height <span class="val" id="v_peakHeight"></span></label><input type="range" id="peakHeight" min="10" max="90" step="1"></div>
+        <div class="field"><label>Depth layers <span class="val" id="v_mLayers"></span></label><input type="range" id="mLayers" min="1" max="8" step="1"></div>
+        <div class="field"><label>Feature height <span class="val" id="v_peakHeight"></span></label><input type="range" id="peakHeight" min="10" max="90" step="1"></div>
         <div class="field">
           <label>Time of day</label>
           <div class="chiprow" id="timePresetChips">
@@ -622,7 +622,7 @@ input[type="range"]::-moz-range-thumb{
             <div class="chip" data-v="moon">Moon</div>
           </div>
         </div>
-        <div class="toggle"><span>Snow caps</span><div class="switch" id="snowCapsToggle"></div></div>
+        <div class="toggle" id="snowCapsRow"><span>Snow caps</span><div class="switch" id="snowCapsToggle"></div></div>
         <div class="toggle"><span>Fog</span><div class="switch" id="fogToggle"></div></div>
         <div class="toggle"><span>Stars</span><div class="switch" id="starsToggle"></div></div>
         <div class="toggle"><span>Clouds</span><div class="switch" id="cloudsToggle"></div></div>
@@ -930,6 +930,11 @@ const CATEGORIES = [
   {id:"abstract", name:"Abstract Shapes"},
   {id:"minimalist", name:"Minimalist"},
   {id:"mountains", name:"Mountain Landscape"},
+  {id:"dunes", name:"Desert Dunes"},
+  {id:"ocean", name:"Ocean Waves"},
+  {id:"hills", name:"Rolling Hills"},
+  {id:"forest", name:"Forest Silhouette"},
+  {id:"skyline", name:"City Skyline"},
   {id:"scribble", name:"Scribble Art"},
   {id:"wavy", name:"Wavy Lines"},
   {id:"blobs", name:"Fluid Blobs"},
@@ -947,6 +952,12 @@ const CATEGORIES = [
   {id:"scandi", name:"Scandinavian"},
   {id:"vaporwave", name:"Retro Vaporwave"},
   {id:"bauhaus", name:"Bauhaus"},
+  {id:"spiral", name:"Spiral"},
+  {id:"stripes", name:"Diagonal Stripes"},
+  {id:"terrazzo", name:"Terrazzo"},
+  {id:"halftone", name:"Halftone"},
+  {id:"topography", name:"Topography"},
+  {id:"aurora", name:"Aurora Bands"},
   {id:"random", name:"Random Composition"},
 ];
 
@@ -954,8 +965,15 @@ const CATEGORIES = [
    Used to skip the (relatively expensive) noise permutation-table
    construction when it isn't needed by the active category. */
 const NOISE_USING_CATEGORIES = new Set([
-  "mountains","wavy","blobs","trimesh","lowpoly","noise","random"
+  "mountains","wavy","blobs","trimesh","lowpoly","noise","random",
+  "halftone","topography","aurora","dunes","ocean","forest"
 ]);
+
+/* Landscape-family categories share the "Landscape Generator" sidebar
+   section (sky, time of day, sun/moon, fog, clouds, atmosphere) and
+   each generator draws its own full scene (sky + all depth layers) in
+   one pass, so they're also single-layer categories (see below). */
+const LANDSCAPE_CATEGORIES = new Set(["mountains","dunes","ocean","hills","forest","skyline"]);
 
 /* =========================================================================
    DEVICE / RESOLUTION PRESETS
@@ -1153,7 +1171,7 @@ function finishShape(ctx, colorHex, opacity, strokeColorHex){
   ctx.globalAlpha = 1;
 }
 function applyShadowGlow(ctx, colorHex){
-  ctx.shadowBlur = 0; ctx.shadowColor='transparent';
+  ctx.shadowBlur = 0; ctx.shadowColor='transparent'; ctx.shadowOffsetY = 0; ctx.shadowOffsetX = 0;
   if(state.shadowIntensity>0){
     ctx.shadowColor = `rgba(0,0,0,${state.shadowIntensity/140})`;
     ctx.shadowBlur = state.shadowIntensity/2.2;
@@ -1349,6 +1367,243 @@ Generators.mountains = function(ctx,w,h,rng,noise2D){
     ctx.fillStyle=g;
     ctx.fillRect(0,horizon-h*0.15,w,h*0.2);
   }
+};
+
+/* ---- shared landscape-family helpers (sky, fog, reflection) ----
+   Extracted so every scene in the landscape family (dunes, ocean, hills,
+   forest, skyline) gets the same sky/atmosphere behavior as mountains
+   without duplicating that logic five times. Generators.mountains keeps
+   its own inline copy untouched to avoid disturbing its existing output. */
+function renderLandscapeSky(ctx,w,h,rng,skyBottomFrac){
+  const preset = state.timePreset;
+  const skies = {
+    day:["#8ec5ff","#e8f4ff"], sunset:["#2b1055","#ff7e5f"], sunrise:["#ffd9a0","#8ecdf0"], night:["#02040a","#141b34"]
+  };
+  const sky = skies[preset]||skies.day;
+  if(state.skyGradient){
+    const g = ctx.createLinearGradient(0,0,0,h*(skyBottomFrac||0.75));
+    g.addColorStop(0, sky[0]); g.addColorStop(1, sky[1]);
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  } else {
+    ctx.fillStyle = sky[0]; ctx.fillRect(0,0,w,h);
+  }
+  if(state.stars || preset==="night"){
+    ctx.fillStyle="#ffffff";
+    for(let i=0;i<180;i++){
+      const x=rng()*w, y=rng()*h*0.5;
+      const r = rng()*1.5;
+      ctx.globalAlpha = 0.3+rng()*0.7;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  if(state.sunMoon!=="none"){
+    const sx = w*(0.68+ (rng()-0.5)*0.05), sy = h*0.27;
+    const rad = Math.min(w,h)*0.07;
+    if(state.sunMoon==="sun"){
+      const g = ctx.createRadialGradient(sx,sy,0,sx,sy,rad*2.3);
+      g.addColorStop(0,"#fff6d8"); g.addColorStop(0.4,"#ffcf7a"); g.addColorStop(1,"rgba(255,190,110,0)");
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,rad*2.3,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#fff2c9"; ctx.beginPath(); ctx.arc(sx,sy,rad,0,Math.PI*2); ctx.fill();
+    } else {
+      ctx.fillStyle="#eef1f8"; ctx.beginPath(); ctx.arc(sx,sy,rad*0.8,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle= sky[1]; ctx.beginPath(); ctx.arc(sx-rad*0.28,sy-rad*0.12,rad*0.72,0,Math.PI*2); ctx.fill();
+    }
+  }
+  if(state.clouds){
+    for(let i=0;i<6;i++){
+      const cx=rng()*w, cy=h*(0.1+rng()*0.25);
+      ctx.globalAlpha=0.3+rng()*0.25;
+      ctx.fillStyle="#ffffff";
+      for(let k=0;k<5;k++){
+        const ox=(k-2)*26*(state.scale/100), oy=Math.sin(k)*7;
+        ctx.beginPath(); ctx.ellipse(cx+ox,cy+oy, 36+rng()*26, 14+rng()*9, 0,0,Math.PI*2); ctx.fill();
+      }
+    }
+    ctx.globalAlpha=1;
+  }
+  return sky;
+}
+function applyLandscapeFog(ctx,w,h,horizon){
+  if(!state.fog) return;
+  const g = ctx.createLinearGradient(0,horizon-h*0.15,0,horizon+h*0.05);
+  g.addColorStop(0,"rgba(255,255,255,0)");
+  g.addColorStop(1,"rgba(255,255,255,0.32)");
+  ctx.fillStyle=g;
+  ctx.fillRect(0,horizon-h*0.15,w,h*0.2);
+}
+function applyLandscapeReflection(ctx,w,h,horizon){
+  if(!state.reflection) return;
+  ctx.save();
+  ctx.translate(0, horizon*2);
+  ctx.scale(1,-1);
+  ctx.globalAlpha=0.22;
+  ctx.drawImage(ctx.canvas, 0,0,w,horizon,0,0,w,horizon);
+  ctx.restore();
+  const g = ctx.createLinearGradient(0,horizon,0,h);
+  g.addColorStop(0,"rgba(10,14,26,0.1)"); g.addColorStop(1,"rgba(10,14,26,0.7)");
+  ctx.fillStyle=g; ctx.fillRect(0,horizon,w,h-horizon);
+}
+
+Generators.dunes = function(ctx,w,h,rng,noise2D){
+  renderLandscapeSky(ctx,w,h,rng,0.8);
+  const layers = state.mLayers;
+  const horizon = h*(state.reflection?0.66:0.86);
+  for(let L=0;L<layers;L++){
+    const depth = L/(layers-1||1);
+    const ridgeY = horizon - (h*(state.peakHeight/100)*0.5)*(1-depth*0.5);
+    const baseColor = state.palette[L % state.palette.length];
+    let color = baseColor;
+    if(state.atmospheric){
+      const hsl = hexToHsl(baseColor);
+      color = hslToHex(hsl.h, hsl.s*(0.35+depth*0.4), clamp(hsl.l+(1-depth)*20,10,90));
+    }
+    ctx.beginPath();
+    ctx.moveTo(0,horizon);
+    const segs=40, freq=0.8+L*0.35;
+    for(let i=0;i<=segs;i++){
+      const x=(i/segs)*w;
+      const nz = fbm(noise2D, (x/w)*freq + L*8 + state.seed*0.0001, L*2.1, 3);
+      const y = ridgeY + (1-nz)*h*0.1*(1-depth*0.3);
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(w,horizon); ctx.closePath();
+    ctx.fillStyle=color; ctx.fill();
+  }
+  applyLandscapeReflection(ctx,w,h,horizon);
+  applyLandscapeFog(ctx,w,h,horizon);
+};
+
+Generators.ocean = function(ctx,w,h,rng,noise2D){
+  renderLandscapeSky(ctx,w,h,rng,0.6);
+  const layers = state.mLayers;
+  const horizon = h*0.56;
+  for(let L=0; L<layers; L++){
+    const depth = L/(layers-1||1);
+    const waveY = horizon + (h-horizon)*depth*0.85 - h*0.02;
+    const baseColor = state.palette[L % state.palette.length];
+    let color = baseColor;
+    if(state.atmospheric){
+      const hsl = hexToHsl(baseColor);
+      color = hslToHex(hsl.h, hsl.s*(0.5+depth*0.5), clamp(hsl.l-(1-depth)*8,5,85));
+    }
+    ctx.beginPath();
+    ctx.moveTo(0,h);
+    const segs=60, freq=3+L*1.4;
+    for(let i=0;i<=segs;i++){
+      const x=(i/segs)*w;
+      const nz = fbm(noise2D, x/w*freq + L*6 + state.seed*0.0002, L*4, 3);
+      const y = waveY + Math.sin(x/w*Math.PI*2*freq*0.3 + L)*h*0.012*(state.scale/100) + (nz-0.5)*h*0.02;
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(w,h); ctx.closePath();
+    ctx.globalAlpha = 0.85+depth*0.15;
+    ctx.fillStyle=color; ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  applyLandscapeFog(ctx,w,h,horizon);
+};
+
+Generators.hills = function(ctx,w,h,rng){
+  renderLandscapeSky(ctx,w,h,rng,0.7);
+  const layers = state.mLayers;
+  const horizon = h*0.82;
+  for(let L=0;L<layers;L++){
+    const depth = L/(layers-1||1);
+    const ridgeY = horizon - (h*(state.peakHeight/100)*0.6)*(1-depth*0.6);
+    const baseColor = state.palette[L % state.palette.length];
+    let color = baseColor;
+    if(state.atmospheric){
+      const hsl = hexToHsl(baseColor);
+      color = hslToHex(hsl.h, hsl.s*(0.4+depth*0.45), clamp(hsl.l+(1-depth)*18,10,92));
+    }
+    ctx.beginPath();
+    ctx.moveTo(0,horizon);
+    const segs=30, freq=0.5+L*0.25;
+    const phase = rng()*Math.PI*2;
+    for(let i=0;i<=segs;i++){
+      const x=(i/segs)*w;
+      const t=x/w;
+      const y = ridgeY + Math.sin(t*Math.PI*2*freq+phase)*h*0.05*(1-depth*0.3)*(state.scale/100)
+                - Math.sin(t*Math.PI)*h*0.04*(1-depth*0.3);
+      ctx.lineTo(x,y);
+    }
+    ctx.lineTo(w,horizon); ctx.closePath();
+    ctx.fillStyle=color; ctx.fill();
+  }
+  applyLandscapeFog(ctx,w,h,horizon);
+};
+
+Generators.forest = function(ctx,w,h,rng,noise2D){
+  renderLandscapeSky(ctx,w,h,rng,0.75);
+  const layers = state.mLayers;
+  const horizon = h*0.84;
+  for(let L=0;L<layers;L++){
+    const depth = L/(layers-1||1);
+    const ridgeY = horizon - (h*(state.peakHeight/100)*0.55)*(1-depth*0.5);
+    const baseColor = state.palette[L % state.palette.length];
+    let color = baseColor;
+    if(state.atmospheric){
+      const hsl = hexToHsl(baseColor);
+      color = hslToHex(hsl.h, hsl.s*(0.35+depth*0.45), clamp(hsl.l+(1-depth)*16,5,88));
+    }
+    ctx.beginPath();
+    ctx.moveTo(0,horizon);
+    const treeW = clamp(14*(state.scale/100)*(1-depth*0.4), 4, 60);
+    const count = Math.ceil(w/treeW)+2;
+    let x=0;
+    for(let i=0;i<count;i++){
+      const jitter = (rng()-0.5)*treeW*0.4;
+      const peakX = x+treeW/2+jitter;
+      const nz = fbm(noise2D, (x/w)*6+L*11+state.seed*0.0001, L*2.5, 3);
+      const peakY = ridgeY - nz*h*0.09*(1-depth*0.3);
+      ctx.lineTo(peakX, peakY);
+      ctx.lineTo(x+treeW, ridgeY);
+      x+=treeW;
+    }
+    ctx.lineTo(w,horizon); ctx.closePath();
+    ctx.fillStyle=color; ctx.fill();
+  }
+  applyLandscapeFog(ctx,w,h,horizon);
+};
+
+Generators.skyline = function(ctx,w,h,rng){
+  renderLandscapeSky(ctx,w,h,rng,0.7);
+  const layers = state.mLayers;
+  const horizon = h*(state.reflection?0.68:0.86);
+  for(let L=0; L<layers; L++){
+    const depth = L/(layers-1||1);
+    const maxH = h*(state.peakHeight/100)*0.55*(1-depth*0.35);
+    const baseColor = state.palette[L % state.palette.length];
+    let color = baseColor;
+    if(state.atmospheric){
+      const hsl = hexToHsl(baseColor);
+      color = hslToHex(hsl.h, hsl.s*(0.3+depth*0.5), clamp(hsl.l*(0.35+depth*0.5), 4, 85));
+    }
+    let x=0;
+    ctx.fillStyle=color;
+    while(x<w){
+      const bw = 18+rng()*46*(state.scale/100);
+      const bh = maxH*(0.25+rng()*0.85);
+      ctx.fillRect(x, horizon-bh, bw, bh+4);
+      if(state.stars || state.timePreset==="night"){
+        ctx.fillStyle = "rgba(255,224,140,0.85)";
+        const winCols = Math.max(1,Math.floor(bw/8));
+        const winRows = Math.max(1,Math.floor(bh/10));
+        for(let wc=0; wc<winCols; wc++){
+          for(let wr=0; wr<winRows; wr++){
+            if(rng()<0.55){
+              ctx.fillRect(x+4+wc*8, horizon-bh+6+wr*10, 3, 4);
+            }
+          }
+        }
+        ctx.fillStyle=color;
+      }
+      x += bw+3;
+    }
+  }
+  applyLandscapeReflection(ctx,w,h,horizon);
+  applyLandscapeFog(ctx,w,h,horizon);
 };
 
 Generators.scribble = function(ctx,w,h,rng){
@@ -1708,6 +1963,140 @@ Generators.bauhaus = function(ctx,w,h,rng){
   ctx.globalAlpha=1;
 };
 
+Generators.spiral = function(ctx,w,h,rng){
+  const cx = w/2, cy = h/2;
+  const arms = clamp(Math.floor(state.shapeCount/25),2,14);
+  const maxR = Math.min(w,h)*0.62*(state.scale/100);
+  for(let a=0;a<arms;a++){
+    const color = pick(rng, state.palette);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, state.strokeWidth||2);
+    ctx.globalAlpha = state.opacity/100;
+    ctx.lineCap = 'round';
+    applyShadowGlow(ctx,color);
+    ctx.beginPath();
+    const turns = 1.5 + rng()*(2+state.density/25);
+    const offset = (Math.PI*2/arms)*a + degToRad(state.rotation);
+    const steps = 220;
+    for(let i=0;i<=steps;i++){
+      const t = i/steps;
+      const r = Math.pow(t, 0.85)*maxR;
+      const angle = offset + t*turns*Math.PI*2;
+      const x = cx+Math.cos(angle)*r, y = cy+Math.sin(angle)*r;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+};
+
+Generators.stripes = function(ctx,w,h,rng){
+  const stripeCount = clamp(Math.floor(state.shapeCount/4),4,140);
+  const diag = Math.sqrt(w*w+h*h)*1.05;
+  ctx.save();
+  ctx.translate(w/2,h/2);
+  ctx.rotate(degToRad(state.rotation));
+  ctx.translate(-diag/2,-diag/2);
+  const stripeWidth = diag/stripeCount;
+  const fillFrac = clamp(0.25+(state.density/100)*0.75, 0.1, 1);
+  for(let i=0;i<stripeCount;i++){
+    const color = pick(rng, state.palette);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = state.opacity/100;
+    ctx.fillRect(i*stripeWidth, 0, Math.max(0.5, stripeWidth*fillFrac), diag);
+  }
+  ctx.restore();
+  ctx.globalAlpha=1;
+};
+
+Generators.terrazzo = function(ctx,w,h,rng){
+  const n = clamp(Math.floor(state.shapeCount*1.1)+20, 30, 600);
+  for(let i=0;i<n;i++){
+    const color = pick(rng, state.palette);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = (state.opacity/100)*(0.55+rng()*0.45);
+    const cx = rng()*w, cy = rng()*h;
+    const r = (state.shapeSize*0.16+2)*(0.25+rng()*1.3)*(state.scale/100);
+    const sides = 3+Math.floor(rng()*5);
+    applyShadowGlow(ctx,color);
+    polygonPath(ctx,cx,cy,r,sides, rng()*Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha=1;
+};
+
+Generators.halftone = function(ctx,w,h,rng,noise2D){
+  const spacing = clamp(state.shapeSize*0.35*(state.scale/100), 6, 90);
+  const cols = Math.ceil(w/spacing)+1, rows = Math.ceil(h/spacing)+1;
+  const freq = 2+ (state.noiseIntensity/100)*4;
+  for(let ry=0;ry<rows;ry++){
+    for(let rx=0;rx<cols;rx++){
+      const x = (rx+0.5)*spacing, y = (ry+0.5)*spacing;
+      const nz = fbm(noise2D, x/w*freq + state.seed*0.0002, y/h*freq, 3);
+      const rad = spacing*0.5*nz*clamp(state.density/70, 0.2, 1.4);
+      if(rad<0.6) continue;
+      const color = pick(rng, state.palette);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = state.opacity/100;
+      ctx.beginPath(); ctx.arc(x,y,rad,0,Math.PI*2); ctx.fill();
+    }
+  }
+  ctx.globalAlpha=1;
+};
+
+Generators.topography = function(ctx,w,h,rng,noise2D){
+  const lines = clamp(Math.floor(state.shapeCount/8),10,90);
+  ctx.lineWidth = Math.max(0.6, state.strokeWidth||1.2);
+  ctx.lineJoin='round';
+  for(let i=0;i<lines;i++){
+    const t = i/lines;
+    const color = pick(rng, state.palette);
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = state.opacity/100;
+    applyShadowGlow(ctx,color);
+    ctx.beginPath();
+    const segs = 110;
+    for(let s=0;s<=segs;s++){
+      const x = (s/segs)*w;
+      const nz = fbm(noise2D, x/w*3 + state.seed*0.0003, t*6, 4);
+      const y = t*h + (nz-0.5)*h*0.14*(state.scale/100);
+      if(s===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+};
+
+Generators.aurora = function(ctx,w,h,rng,noise2D){
+  const bands = clamp(Math.floor(state.shapeCount/22),3,16);
+  for(let b=0;b<bands;b++){
+    const color = pick(rng, state.palette);
+    const baseY = rng()*h;
+    const bandDepth = h*0.08*(state.shapeSize/90)*(state.scale/100)+h*0.02;
+    ctx.beginPath();
+    const segs = 70;
+    for(let s=0;s<=segs;s++){
+      const x = (s/segs)*w;
+      const nz = fbm(noise2D, x/w*2.4 + b*5 + state.seed*0.0004, b*3, 4);
+      const y = baseY + (nz-0.5)*h*0.35*(state.scale/100);
+      if(s===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    for(let s=segs;s>=0;s--){
+      const x = (s/segs)*w;
+      const nz = fbm(noise2D, x/w*2.4 + b*5 + state.seed*0.0004, b*3+1.7, 4);
+      const y = baseY + (nz-0.5)*h*0.35*(state.scale/100) + bandDepth;
+      ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0, withAlphaSafe(color,0));
+    grad.addColorStop(0.5, withAlphaSafe(color, (state.opacity/100)*0.7));
+    grad.addColorStop(1, withAlphaSafe(color,0));
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+};
+
 Generators.random = function(ctx,w,h,rng,noise2D){
   const keys = Object.keys(Generators).filter(k=>k!=="random");
   const fn = Generators[pick(rng,keys)];
@@ -1752,7 +2141,7 @@ function renderToContext(ctx, w, h){
 
   const layers = Math.max(1, state.layerCount);
   const gen = Generators[state.category] || Generators.geometric;
-  const singleLayerCategory = state.category==="mountains" || state.category==="vaporwave" || state.category==="noise" || state.category==="gradientmesh";
+  const singleLayerCategory = LANDSCAPE_CATEGORIES.has(state.category) || state.category==="vaporwave" || state.category==="noise" || state.category==="gradientmesh" || state.category==="aurora";
   const layerCountToRun = singleLayerCategory ? 1 : layers;
   for(let L=0; L<layerCountToRun; L++){
     ctx.save();
@@ -1774,6 +2163,15 @@ function renderToContext(ctx, w, h){
 
 let renderScheduled = false;
 function scheduleRender(){
+  /* BUGFIX: if the user tweaks any control while "compare" is showing the
+     previous version, the badge claimed to still show the old design even
+     though the edit silently re-rendered the current one underneath it.
+     Any change that schedules a fresh render exits compare mode first so
+     the badge and the pixels on screen never disagree. */
+  if(compareMode){
+    compareMode = false;
+    $('compareBadge').style.display='none';
+  }
   if(renderScheduled) return;
   renderScheduled = true;
   requestAnimationFrame(()=>{
@@ -1826,8 +2224,13 @@ function buildCategoryGrid(){
 }
 
 function toggleContextualSections(){
-  $('mountainSection').style.display = state.category==='mountains' ? '' : 'none';
+  $('mountainSection').style.display = LANDSCAPE_CATEGORIES.has(state.category) ? '' : 'none';
   $('scribbleSection').style.display = state.category==='scribble' ? '' : 'none';
+  /* Snow caps only makes sense for the mountain silhouette itself —
+     the other landscape scenes (dunes, ocean, hills, forest, skyline)
+     ignore that flag entirely, so hide the control rather than leave a
+     dead toggle sitting in the sidebar for them. */
+  $('snowCapsRow').style.display = state.category==='mountains' ? '' : 'none';
 }
 
 function buildPaletteGrid(){
@@ -2252,14 +2655,41 @@ $('downloadBtn').addEventListener('click', ()=>{
   });
 });
 $('copyClipboardBtn').addEventListener('click', async ()=>{
+  /* BUGFIX: canvas.toBlob() is asynchronous. The previous version waited
+     for its callback and only THEN called navigator.clipboard.write().
+     By that point the click had already finished and the browser no
+     longer considered the call to be part of a direct user gesture —
+     several browsers (Safari in particular, and Chrome under stricter
+     permission policies) silently reject clipboard writes that happen
+     outside that gesture window, so "Copy to clipboard" looked broken.
+     The fix: call navigator.clipboard.write() SYNCHRONOUSLY inside the
+     click handler, handing it a Promise<Blob> rather than an already-
+     resolved Blob. The Clipboard API is specifically designed to accept
+     a pending promise for this reason — it preserves the gesture. */
+  if(typeof ClipboardItem === 'undefined' || !navigator.clipboard || !navigator.clipboard.write){
+    flashButton($('copyClipboardBtn'), 'Not supported');
+    return;
+  }
   const {w,h} = getExportDims();
   const c = (w===state.width && h===state.height) ? previewCanvas : renderAtResolution(w,h);
-  c.toBlob((blob)=>{
-    if(!blob) return;
-    navigator.clipboard.write([new ClipboardItem({'image/png':blob})])
-      .then(()=>flashButton($('copyClipboardBtn'), 'Copied!'))
-      .catch(()=>flashButton($('copyClipboardBtn'), 'Copy failed'));
-  }, 'image/png');
+  const blobPromise = new Promise((resolve,reject)=>{
+    c.toBlob((blob)=>{ blob ? resolve(blob) : reject(new Error('toBlob returned null')); }, 'image/png');
+  });
+  try{
+    await navigator.clipboard.write([new ClipboardItem({'image/png': blobPromise})]);
+    flashButton($('copyClipboardBtn'), 'Copied!');
+  }catch(err){
+    /* Some browsers don't support a pending-promise ClipboardItem value
+       at all (older Firefox). Fall back to awaiting the blob ourselves
+       and writing it directly — still better than failing silently. */
+    try{
+      const blob = await blobPromise;
+      await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+      flashButton($('copyClipboardBtn'), 'Copied!');
+    }catch(err2){
+      flashButton($('copyClipboardBtn'), 'Copy failed');
+    }
+  }
 });
 $('batchExportBtn').addEventListener('click', async ()=>{
   flashButton($('batchExportBtn'), 'Exporting…');
@@ -2372,6 +2802,20 @@ $('presetSearch').addEventListener('input', (e)=>{
   document.querySelectorAll('.category-card').forEach(card=>{
     const name = card.querySelector('.cname').textContent.toLowerCase();
     card.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+  /* BUGFIX: the search field's own placeholder promises it searches
+     "styles, palettes, presets" but previously only ever touched the
+     category grid — palette presets and saved presets silently ignored
+     any query typed here. Now all three respond to the same search. */
+  document.querySelectorAll('#paletteGrid .preset-palette').forEach(card=>{
+    const name = card.querySelector('.pname').textContent.toLowerCase();
+    card.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
+  document.querySelectorAll('#presetList .preset-item').forEach(item=>{
+    const nameEl = item.querySelector('span');
+    if(!nameEl) return;
+    const name = nameEl.textContent.toLowerCase();
+    item.style.display = (!q || name.includes(q)) ? '' : 'none';
   });
 });
 
